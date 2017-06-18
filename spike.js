@@ -66,8 +66,17 @@ function start(isCaller) {
     });
 }
 
+function preferVP9(sdp) {
+    if (sdp.indexOf('SAVPF 96 98 100 102 127 97 99 101 125') === -1 || sdp.indexOf('VP9/90000') === -1) {
+        return sdp;
+    }
+
+    return sdp.replace('SAVPF 96 98 100 102 127 97 99 101 125', 'SAVPF 101 100 96 98 102 127 97 99 125');
+}
+
 function gotOfferDescription(desc) {
     console.log('created offer description', desc);
+    desc.sdp = preferVP9(desc.sdp);
     pc.setLocalDescription(desc, () => {
         sendMessage(JSON.stringify({'sdp': desc}));
     }, (err) => {
@@ -77,6 +86,7 @@ function gotOfferDescription(desc) {
 
 function gotAnswerDescription(desc) {
     console.log('sending answer message', desc);
+    desc.sdp = preferVP9(desc.sdp);
     pc.setLocalDescription(desc, () => {
         sendMessage(JSON.stringify({'sdp': desc}));
 }, (err) => {
