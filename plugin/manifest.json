@@ -1,11 +1,11 @@
 {
-    "name" : "Screen Capturing",
-    "author": "Muaz Khan",
-    "version" : "3.4",
+    "name" : "Mira",
+    "author": "Adam Neumann",
+    "version" : "0.1",
     "manifest_version" : 2,
     "minimum_chrome_version": "34",
     "description" : "This WebRTC screen capturing extension can be used within any WebRTC library/application! Use getScreenId.js!",
-    "homepage_url": "https://www.webrtc-experiment.com/getScreenId/",
+    "homepage_url": "https://mira.cfapps.io",
     "background": {
         "scripts": ["background-script.js"],
         "persistent": false
@@ -15,18 +15,11 @@
        "all_frames": true,
        "run_at": "document_end",
        "matches": [
-           "https://www.webrtc-experiment.com/*",
-           "https://rtcmulticonnection.herokuapp.com/*",
-           "http://localhost:8000/*"
+           "http://localhost:3000/*",
+           "https://mira.cfapps.io/*"
        ]
     }],
-    "icons" : {
-        "48" : "icon.png"
-    },
     "permissions": [
         "desktopCapture"
-    ],
-    "web_accessible_resources": [
-        "icon.png"
     ]
 }

@@ -4,6 +4,10 @@ remoteVideo = document.getElementById('remoteVideo');
 
 // window.postMessage('get-sourceId', '*');
 
+let extensionState = {
+    loaded: false
+}
+
 
 var currentUserUUID = Math.round(Math.random() * 60535) + 5000;
 console.log(`I am ${currentUserUUID}`);
@@ -14,6 +18,13 @@ function sendMessage(message) {
         sender: currentUserUUID,
         message: message
     });
+}
+
+function requestDestopCapture() {
+    if (!extensionState.loaded) {
+        alert('Mira extension has not loaded. Check it is installed and running for this url.');
+    }
+    window.postMessage('get-sourceId', '*');
 }
 
 
@@ -35,7 +46,7 @@ function start(isCaller) {
         // console.log('onicecandidate, evt:', evt);
         // TODO: socketio.emit('signal', ...)
         if (evt.candidate) {
-            sendMessage(JSON.stringify({ "candidate": evt.candidate }));
+            sendMessage(JSON.stringify({"candidate": evt.candidate}));
         }
     };
 
@@ -88,7 +99,7 @@ function gotAnswerDescription(desc) {
     desc.sdp = preferVP9(desc.sdp);
     pc.setLocalDescription(desc, () => {
         sendMessage(JSON.stringify({'sdp': desc}));
-}, (err) => {
+    }, (err) => {
         console.log('pc.setLocalDescription Err', err);
     });
 }
@@ -114,7 +125,7 @@ socketio.on('message', function (msg) {
     var message = JSON.parse(msg.message);
     if (message.sdp) {
         console.log(`Received SDP (${message.sdp.type}) message`);
-        pc.setRemoteDescription(new RTCSessionDescription(message.sdp), function() {
+        pc.setRemoteDescription(new RTCSessionDescription(message.sdp), function () {
 
         });
     }
@@ -122,5 +133,43 @@ socketio.on('message', function (msg) {
         pc.addIceCandidate(new RTCIceCandidate(message.candidate));
     } else {
         console.log('Unknown message', message);
+    }
+});
+
+const ignoredMessages = ['get-sourceId'];
+window.addEventListener('message', (message) => {
+    // This listener will also fire for messages this window posts
+    if (ignoredMessages.indexOf(message.data) >= 0) {
+        console.log('Browser ignored message', message.data);
+        return;
+    }
+
+    if (message.data === 'mira-extension-loaded') {
+        extensionState.loaded = true;
+
+        console.log('Browser sees Mira extension');
+    } else if (message.data.sourceId) {
+        let constraints = {
+            video: {
+                mandatory: {
+                    chromeMediaSource: 'desktop',
+                    maxWidth: screen.width,
+                    maxHeight: screen.height,
+                    // maxFrameRate: 10,
+                    // minAspectRatio: 1.77,
+                    chromeMediaSourceId: message.data.sourceId
+                }
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function (mediaStream) {
+                localVideo.srcObject = mediaStream;
+                localVideo.onloadedmetadata = function (e) {
+                    localVideo.play();
+                };
+            });
+    } else {
+        console.log('Unhandled message', message);
     }
 });
