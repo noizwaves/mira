@@ -1,2 +1,4 @@
 ---
   buildpack: nodejs_buildpack
+  health-check-type: http
+  health-check-http-endpoint: /
