@@ -53,13 +53,13 @@ function start(isCaller) {
     // get the local stream, show it in the local video element and send it
     navigator.getUserMedia({"video": true}, function (stream) {
         localVideo.src = URL.createObjectURL(stream);
+        console.log('Adding local stream');
         pc.addStream(stream);
 
         if (isCaller)
             pc.createOffer(gotOfferDescription, createOfferFailure);
         else {
-            // pc.createAnswer(pc.remoteDescription, gotDescription, createAnswerFailure);
-            // pc.createAnswer(gotAnswerDescription, createAnswerFailure);
+            pc.createAnswer(gotAnswerDescription, createAnswerFailure);
         }
     }, function (err) {
         console.log('gUM error: ', err);
@@ -73,19 +73,15 @@ function gotOfferDescription(desc) {
     }, (err) => {
         console.log('pc.setLocalDescription Err', err);
     });
-    // TODO:
-    // signalingChannel.send(JSON.stringify({"sdp": desc}));
 }
 
 function gotAnswerDescription(desc) {
-    console.log('created answer description', desc);
+    console.log('sending answer message', desc);
     pc.setLocalDescription(desc, () => {
         sendMessage(JSON.stringify({'sdp': desc}));
 }, (err) => {
         console.log('pc.setLocalDescription Err', err);
     });
-    // TODO:
-    // signalingChannel.send(JSON.stringify({"sdp": desc}));
 }
 
 function createOfferFailure(err) {
@@ -97,9 +93,7 @@ function createAnswerFailure(err) {
 }
 
 
-// signalingChannel.onmessage = function (evt) {
 socketio.on('message', function (msg) {
-    // console.log('on(message): ', msg);
     if (msg.sender === currentUserUUID) {
         return;
     }
@@ -110,11 +104,9 @@ socketio.on('message', function (msg) {
 
     var message = JSON.parse(msg.message);
     if (message.sdp) {
-        // pc.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        console.log(`Received SDP (${message.sdp.type}) message`);
         pc.setRemoteDescription(new RTCSessionDescription(message.sdp), function() {
-            if(message.sdp.type === 'offer') {
-                pc.createAnswer(gotAnswerDescription, createAnswerFailure);
-            }
+
         });
     }
     else if (message.candidate) {
@@ -123,36 +115,3 @@ socketio.on('message', function (msg) {
         console.log('Unknown message', message);
     }
 });
-
-// start(true);
-
-
-// window.addEventListener('message', (message) => {
-//     if (!message.data.sourceId) {
-//         return;
-//     }
-//
-//     let constraints = {
-//         video: {
-//             mandatory: {
-//                 chromeMediaSource: 'desktop',
-//                 maxWidth: screen.width,
-//                 maxHeight: screen.height,
-//                 // maxFrameRate: 10,
-//                 // minAspectRatio: 1.77,
-//                 chromeMediaSourceId: message.data.sourceId
-//             }
-//         }
-//     };
-//
-// navigator.mediaDevices.getUserMedia(constraints)
-//     .then(function (mediaStream) {
-//         var video = document.querySelector('video');
-//         video.srcObject = mediaStream;
-//         video.onloadedmetadata = function (e) {
-//             video.play();
-//         };
-//     });
-// }) ;
-
-
