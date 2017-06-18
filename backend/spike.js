@@ -1,4 +1,3 @@
-var backendUrl = 'http://localhost:3000/';
 localVideo = document.getElementById('localVideo');
 remoteVideo = document.getElementById('remoteVideo');
 
@@ -8,7 +7,7 @@ remoteVideo = document.getElementById('remoteVideo');
 
 var currentUserUUID = Math.round(Math.random() * 60535) + 5000;
 console.log(`I am ${currentUserUUID}`);
-var socketio = io.connect(backendUrl);
+var socketio = io.connect();
 
 function sendMessage(message) {
     socketio.emit('message', {

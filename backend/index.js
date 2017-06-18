@@ -1,10 +1,18 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-app.get('/', function(req, res){
-    res.send('<h1>Hello world</h1>');
+
+app.get('/spike.html', function (req, res) {
+    res.sendFile(__dirname + '/spike.html');
 });
+
+app.get('/spike.js', function (req, res) {
+    res.sendFile(__dirname + '/spike.js');
+});
+
+app.use('/node_modules', express.static('node_modules'))
 
 io.sockets.on('connection', function (socket) {
     console.log('a user connected via io.sockets.on');
@@ -12,12 +20,12 @@ io.sockets.on('connection', function (socket) {
         console.log('a message was received', data);
         socket.broadcast.emit('message', data);
     });
-    socket.on('disconnect', function(){
+    socket.on('disconnect', function () {
         console.log('a user disconnected via io.sockets.on');
     });
 });
 
 
-http.listen(3000, function(){
+http.listen(3000, function () {
     console.log('listening on *:3000');
 });
