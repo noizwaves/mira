@@ -3,13 +3,11 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+app.use(express.static('client'));
+app.use(express.static('static'));
 
-app.get('/spike.html', function (req, res) {
-    res.sendFile(__dirname + '/spike.html');
-});
-
-app.get('/spike.js', function (req, res) {
-    res.sendFile(__dirname + '/spike.js');
+app.get('/', function (req, res) {
+    res.sendFile(__dirname + '/client/spike.html');
 });
 
 app.use('/node_modules', express.static('node_modules'))
