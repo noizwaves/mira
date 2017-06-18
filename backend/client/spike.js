@@ -11,7 +11,13 @@ let extensionState = {
 
 var currentUserUUID = Math.round(Math.random() * 60535) + 5000;
 console.log(`I am ${currentUserUUID}`);
-var socketio = io.connect();
+
+var socketio;
+if (window.location.href.match(/mira.cfapps.io/)) {
+    socketio = io.connect('https://mira.cfapps.io:4443/');
+} else {
+    socketio = io.connect();
+}
 
 function sendMessage(message) {
     socketio.emit('message', {
