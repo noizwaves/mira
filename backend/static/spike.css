@@ -1,0 +1,31 @@
+body {
+    position: relative;
+}
+
+#localVideo, #remoteVideo {
+    max-width: 150px;
+}
+
+#screenVideo {
+    width: 100%;
+}
+
+#local {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#localVideo:hover, #remoteVideo:hover {
+    opacity: 0.25;
+}
+
+#remote {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+#screen {
+    padding: 10px;
+}

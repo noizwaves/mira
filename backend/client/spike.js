@@ -1,6 +1,6 @@
 localVideo = document.getElementById('localVideo');
 remoteVideo = document.getElementById('remoteVideo');
-
+screenVideo = document.getElementById('screenVideo');
 
 let extensionState = {
     loaded: false
@@ -67,7 +67,8 @@ function startScreenshare(sourceId) {
         }
     };
 
-    _start(true, constraints);
+    // _start(true, constraints);
+    _startMultiple(true, constraints, {"video": true});
 }
 
 // run start(true) to initiate a call
@@ -86,7 +87,12 @@ function _start(isCaller, gumConstraints) {
 
     // once remote stream arrives, show it in the remote video element
     pc.onaddstream = function (evt) {
-        remoteVideo.src = URL.createObjectURL(evt.stream);
+        if (!remoteVideo.src) {
+            remoteVideo.src = URL.createObjectURL(evt.stream);
+        } else if (!screenVideo.src) {
+            screenVideo.src = URL.createObjectURL(evt.stream);
+        }
+
         console.log('Received remote stream. ULTIMATE SUCCESS!');
     };
 
@@ -105,6 +111,57 @@ function _start(isCaller, gumConstraints) {
     }, function (err) {
         console.log('gUM error: ', err);
     });
+}
+
+// run start(true) to initiate a call
+function _startMultiple(isCaller, gumScreen, gumWebcam) {
+    pc = new RTCPeerConnection(configuration);
+
+    // send any ice candidates to the other peer
+    pc.onicecandidate = function (evt) {
+        if (evt.candidate) {
+            sendMessage(JSON.stringify({"candidate": evt.candidate}));
+        }
+    };
+
+    pc.oniceconnectionstatechange = function (evt) {
+    };
+
+    // once remote stream arrives, show it in the remote video element
+    pc.onaddstream = function (evt) {
+        if (!remoteVideo.src) {
+            remoteVideo.src = URL.createObjectURL(evt.stream);
+        } else if (!screenVideo.src) {
+            screenVideo.src = URL.createObjectURL(evt.stream);
+        }
+
+        console.log('Received remote stream. ULTIMATE SUCCESS!');
+    };
+
+    // get the local stream, show it in the local video element and send it
+    navigator.getUserMedia(gumScreen, function (screenStream) {
+        navigator.getUserMedia(gumWebcam, function (webcamStream) {
+            localVideo.src = URL.createObjectURL(webcamStream);
+            screenVideo.src = URL.createObjectURL(screenStream);
+
+            console.log('Adding webcam stream', webcamStream);
+            pc.addStream(webcamStream);
+
+            console.log('Adding screen stream', screenStream);
+            pc.addStream(screenStream);
+
+            if (isCaller) {
+                pc.createOffer(gotOfferDescription, createOfferFailure);
+            }
+            else {
+                pc.createAnswer(gotAnswerDescription, createAnswerFailure);
+            }
+        }, gumError);
+    }, gumError);
+
+    function gumError(err) {
+        console.log('gUM error: ', err);
+    }
 }
 
 function preferH264(sdp) {
