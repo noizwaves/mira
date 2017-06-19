@@ -35,6 +35,10 @@ function requestDestopCapture() {
     window.postMessage('get-sourceId', '*');
 }
 
+function requestWebcam() {
+    startWebcam(true);
+}
+
 
 var pc;
 var configuration = {
@@ -45,22 +49,40 @@ var configuration = {
     }]
 };
 
+function startWebcam(isCaller) {
+    _start(isCaller, {"video": true});
+}
+
+function startScreenshare(sourceId) {
+    const constraints = {
+        video: {
+            mandatory: {
+                chromeMediaSource: 'desktop',
+                maxWidth: screen.width,
+                maxHeight: screen.height,
+                // maxFrameRate: 10,
+                // minAspectRatio: 1.77,
+                chromeMediaSourceId: sourceId
+            }
+        }
+    };
+
+    _start(true, constraints);
+}
+
 // run start(true) to initiate a call
-function start(isCaller) {
+function _start(isCaller, gumConstraints) {
     pc = new RTCPeerConnection(configuration);
 
     // send any ice candidates to the other peer
     pc.onicecandidate = function (evt) {
-        // console.log('onicecandidate, evt:', evt);
-        // TODO: socketio.emit('signal', ...)
         if (evt.candidate) {
             sendMessage(JSON.stringify({"candidate": evt.candidate}));
         }
     };
 
     pc.oniceconnectionstatechange = function (evt) {
-        // console.log('oniceconnectionstatechange, evt:', evt);
-    }
+    };
 
     // once remote stream arrives, show it in the remote video element
     pc.onaddstream = function (evt) {
@@ -69,13 +91,14 @@ function start(isCaller) {
     };
 
     // get the local stream, show it in the local video element and send it
-    navigator.getUserMedia({"video": true}, function (stream) {
+    navigator.getUserMedia(gumConstraints, function (stream) {
         localVideo.src = URL.createObjectURL(stream);
-        console.log('Adding local stream');
+        console.log('Adding local stream', stream);
         pc.addStream(stream);
 
-        if (isCaller)
+        if (isCaller) {
             pc.createOffer(gotOfferDescription, createOfferFailure);
+        }
         else {
             pc.createAnswer(gotAnswerDescription, createAnswerFailure);
         }
@@ -84,7 +107,7 @@ function start(isCaller) {
     });
 }
 
-function preferVP9(sdp) {
+function preferH264(sdp) {
     if (sdp.indexOf('SAVPF 96 98 100 102 127 97 99 101 125') === -1 || sdp.indexOf('VP9/90000') === -1) {
         return sdp;
     }
@@ -94,7 +117,7 @@ function preferVP9(sdp) {
 
 function gotOfferDescription(desc) {
     console.log('created offer description', desc);
-    desc.sdp = preferVP9(desc.sdp);
+    desc.sdp = preferH264(desc.sdp);
     pc.setLocalDescription(desc, () => {
         sendMessage(JSON.stringify({'sdp': desc}));
     }, (err) => {
@@ -104,7 +127,7 @@ function gotOfferDescription(desc) {
 
 function gotAnswerDescription(desc) {
     console.log('sending answer message', desc);
-    desc.sdp = preferVP9(desc.sdp);
+    desc.sdp = preferH264(desc.sdp);
     pc.setLocalDescription(desc, () => {
         sendMessage(JSON.stringify({'sdp': desc}));
     }, (err) => {
@@ -167,27 +190,10 @@ window.addEventListener('message', (message) => {
 
         console.log('Browser sees Mira extension');
     } else if (message.data.sourceId) {
-        let constraints = {
-            video: {
-                mandatory: {
-                    chromeMediaSource: 'desktop',
-                    maxWidth: screen.width,
-                    maxHeight: screen.height,
-                    // maxFrameRate: 10,
-                    // minAspectRatio: 1.77,
-                    chromeMediaSourceId: message.data.sourceId
-                }
-            }
-        };
-
-        navigator.mediaDevices.getUserMedia(constraints)
-            .then(function (mediaStream) {
-                localVideo.srcObject = mediaStream;
-                localVideo.onloadedmetadata = function (e) {
-                    localVideo.play();
-                };
-            });
+        startScreenshare(message.data.sourceId);
     } else {
         console.log('Unhandled message', message);
     }
 });
+
+console.log('Quick Start - run requestDestopCapture() or requestWebcam() to get started');
