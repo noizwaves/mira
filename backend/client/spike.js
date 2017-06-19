@@ -2,8 +2,6 @@ localVideo = document.getElementById('localVideo');
 remoteVideo = document.getElementById('remoteVideo');
 
 
-// window.postMessage('get-sourceId', '*');
-
 let extensionState = {
     loaded: false
 }
@@ -25,6 +23,10 @@ function sendMessage(message) {
         message: message
     });
 }
+
+socketio.on('connect', () => {
+    sendMessage(JSON.stringify({hi: currentUserUUID}));
+});
 
 function requestDestopCapture() {
     if (!extensionState.loaded) {
@@ -124,11 +126,13 @@ socketio.on('message', function (msg) {
         return;
     }
 
-    if (!pc) {
-        start(false);
+    var message = JSON.parse(msg.message);
+
+
+    if (!pc && (message.sdp || message.candidate)) {
+        startWebcam(false);
     }
 
-    var message = JSON.parse(msg.message);
     if (message.sdp) {
         console.log(`Received SDP (${message.sdp.type}) message`);
         pc.setRemoteDescription(new RTCSessionDescription(message.sdp), function () {
@@ -137,7 +141,15 @@ socketio.on('message', function (msg) {
     }
     else if (message.candidate) {
         pc.addIceCandidate(new RTCIceCandidate(message.candidate));
-    } else {
+    }
+    else if (message.hi) {
+        console.log(`${message.hi} says hi!`);
+        sendMessage(JSON.stringify({ohHai: currentUserUUID}));
+    }
+    else if (message.ohHai) {
+        console.log(`${message.ohHai} says oh hai!`);
+    }
+    else {
         console.log('Unknown message', message);
     }
 });
